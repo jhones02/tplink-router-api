@@ -101,7 +101,7 @@ class ArcherAX12:
         """Wrapper for posting requests that handles transparent re-authentication on session expiration."""
         generation = self.session.generation
         try:
-            response = await self.session.post(path, data)
+            response = await self._authenticator.request(path, data)
         except SessionExpiredError:
             # Re-auth one at a time: this firmware keeps a single admin session, so parallel
             # logins invalidate each other's stok and every caller would end up failing.
@@ -110,7 +110,7 @@ class ArcherAX12:
             async with self._auth_lock:
                 if self.session.generation == generation:
                     await self._authenticator.login(self.password)
-            response = await self.session.post(path, data)
+            response = await self._authenticator.request(path, data)
         return _checked(path, response)
 
     async def get_status(self) -> RouterStatus:
@@ -143,7 +143,7 @@ class ArcherAX12:
         if self.session.stok:
             try:
                 # Post to logout endpoint
-                await self.session.post("admin/system?form=logout", {})
+                await self._authenticator.request("admin/system?form=logout", {})
             except (RouterError, httpx.HTTPError):
                 # A router that is already gone should not turn teardown into an error;
                 # the token is cleared in `finally` either way.
