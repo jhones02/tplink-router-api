@@ -57,11 +57,20 @@ class RouterSession:
         
         # Clean path and format URL
         clean_path = path.lstrip("/")
-        url = f"/cgi-bin/luci/;stok={stok_val}/{clean_path}"
+
+        if self.stok is None or use_login_stok:
+            _, separator, query = clean_path.partition("?")
+
+            if separator:
+                url = f"/cgi-bin/luci/;stok=/login?{query}"
+            else:
+                url = "/cgi-bin/luci/;stok=/login"
+        else:
+            url = f"/cgi-bin/luci/;stok={self.stok}/{clean_path}"
         
         headers = {
             "Content-Type": "application/x-www-form-urlencoded",
-            "Referer": f"{self.base_url}/webpages/index.html",
+            "Referer": f"{self.base_url}/webpages/index.html#/login",
         }
         
         response = await self.client.post(url, data=data, headers=headers)
