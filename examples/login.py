@@ -28,7 +28,7 @@ def load_env_file():
 async def main():
     # Load .env file
     load_env_file()
-    
+
     # Read host and password from environment variables
     host = os.environ.get("TPLINK_HOST", "192.168.0.1")
     password = os.environ.get("TPLINK_PASSWORD")
@@ -42,7 +42,7 @@ async def main():
         sys.exit(1)
 
     print(f"Connecting to TP-Link router at {host} ...")
-    
+
     try:
         async with ArcherAX12(host=host, password=password) as router:
             print("Performing authentication handshake...")
@@ -55,7 +55,30 @@ async def main():
             print("\nVerification Details:")
             print(f"  LAN MAC Address: {status.lan.macaddr}")
             print(f"  Wireless 2.4G Encryption: {status.wireless_2g.encryption}")
-            
+
+            band2G = await router.wifi.get_2g()
+            print(f" Band 2G: {band2G.ssid, band2G.channel, band2G.psk_key, band2G.psk_cipher}")
+
+            band5G = await router.wifi.get_5g()
+            print(f" Band 5G: {band5G.ssid, band5G.channel, band5G.psk_key, band5G.psk_cipher}")
+
+            guest = await router.wifi.get_guest()
+            print(f" Guests 2G: {guest.guest_2g_ssid, guest.guest_2g_psk_key, guest.guest_2g_psk_key}")
+
+            guest = await router.wifi.get_guest()
+            print(f" Guests 5G: {guest.guest_5g_ssid, guest.guest_5g_psk_key, guest.guest_5g_psk_key}")
+
+            update = await router.wifi.set_guest(
+                enable=True,
+                isolate=True,
+                ssid="NewName",
+                password="newPass",
+                bands=["2G","5G"]
+            )
+
+            print(f"Status ipdate: {update}")
+
+
     except RouterError as e:
         print(f"[-] Router error occurred: {e}")
         sys.exit(1)
